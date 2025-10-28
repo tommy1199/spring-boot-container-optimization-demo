@@ -1,0 +1,13 @@
+services:
+  postgres:
+    image: 'postgres:15.3'
+    environment:
+      - 'POSTGRES_USER=myuser'
+      - 'POSTGRES_PASSWORD=secret'
+      - 'POSTGRES_DB=mydb'
+    ports:
+      - '5432:5432'
+  kafka:
+    image: 'apache/kafka:latest'
+    ports:
+      - '9092:9092'

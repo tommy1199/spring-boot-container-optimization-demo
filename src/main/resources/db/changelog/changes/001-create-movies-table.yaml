@@ -1,0 +1,45 @@
+databaseChangeLog:
+  - changeSet:
+      id: 001-create-movies-table
+      author: movie-service
+      changes:
+        - createTable:
+            tableName: movies
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: name
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: release_date
+                  type: DATE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: category
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: false
+        - createIndex:
+            indexName: idx_movies_category
+            tableName: movies
+            columns:
+              - column:
+                  name: category
+        - createIndex:
+            indexName: idx_movies_name
+            tableName: movies
+            columns:
+              - column:
+                  name: name
+      rollback:
+        - dropTable:
+            tableName: movies
