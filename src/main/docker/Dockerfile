@@ -1,4 +1,4 @@
-FROM eclipse-temurin:25-jre-noble  AS builder
+FROM eclipse-temurin:25-jdk-noble  AS builder
 WORKDIR /builder
 # This points to the built jar file in the target folder
 # Adjust this to 'build/libs/*.jar' if you're using Gradle
@@ -8,8 +8,27 @@ COPY ${JAR_FILE} application.jar
 # Extract the jar file using an efficient layout
 RUN java -Djarmode=tools -jar application.jar extract --layers --destination extracted
 
+RUN jdeps --ignore-missing-deps -q  \
+    --recursive  \
+    --print-module-deps  \
+    --multi-release 25 \
+    --class-path 'extracted/dependencies/lib/*'  \
+    extracted/application/*.jar > deps.info
+RUN cat deps.info
+RUN jlink \
+    --add-modules $(cat deps.info) \
+    --strip-debug \
+    --compress zip-9 \
+    --no-header-files \
+    --no-man-pages \
+    --output /myjre
+
 # This is the runtime container
-FROM eclipse-temurin:25-jre-noble
+FROM ubuntu:24.04
+ENV JAVA_HOME=/user/java/jdk17
+ENV PATH=$JAVA_HOME/bin:$PATH
+COPY --from=builder /myjre $JAVA_HOME
+
 WORKDIR /application
 # Copy the extracted jar contents from the builder container into the working directory in the runtime container
 # Every copy step creates a new docker layer
