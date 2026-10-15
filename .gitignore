@@ -141,4 +141,5 @@ buildNumber.properties
 # End of https://www.toptal.com/developers/gitignore/api/java,maven,intellij+all,direnv
 
 devbox.lock
-loosejar*
+loosejar-*.jar
+result.csv
