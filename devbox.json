@@ -24,8 +24,13 @@
         "grep '\"0,00%\"' result.csv > result.csv.tmp; mv result.csv.tmp result.csv",
         "docker compose down --volumes"
       ],
-      "test": [
-        "echo \"Error: no test specified\" && exit 1"
+      "build": [
+        "./mvnw clean verify",
+        "docker build -f src/main/docker/Dockerfile -t movie-service:latest ."
+      ],
+      "build-optimized": [
+        "./mvnw clean verify -Poptimized",
+        "docker build -f src/main/docker/Dockerfile -t movie-service:optimized ."
       ]
     }
   }
