@@ -31,6 +31,14 @@
       "build-optimized": [
         "./mvnw clean verify -Poptimized",
         "docker build -f src/main/docker/Dockerfile -t movie-service:optimized ."
+      ],
+      "build-ownjre": [
+        "./mvnw clean verify -Poptimized",
+        "docker build -f src/main/docker/Dockerfile.ownjre -t movie-service:ownjre ."
+      ],
+      "build-chisel": [
+        "./mvnw clean verify -Poptimized",
+        "docker build -f src/main/docker/Dockerfile.chisel -t movie-service:chisel ."
       ]
     }
   }
