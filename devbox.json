@@ -39,6 +39,10 @@
       "build-chisel": [
         "./mvnw clean verify -Poptimized",
         "docker build -f src/main/docker/Dockerfile.chisel -t movie-service:chisel ."
+      ],
+      "build-fedora": [
+        "./mvnw clean verify -Poptimized",
+        "docker build -f src/main/docker/Dockerfile.fedora -t movie-service:fedora ."
       ]
     }
   }
