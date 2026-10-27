@@ -2,7 +2,8 @@
   "$schema": "https://raw.githubusercontent.com/jetify-com/devbox/0.16.0/.schema/devbox.schema.json",
   "packages": [
     "zulu@25.0.3",
-    "httpie@latest"
+    "httpie@latest",
+    "apko@latest"
   ],
   "shell": {
     "init_hook": [
@@ -13,7 +14,7 @@
         "rm -rf ext && rm -f loose-*.jar && rm -f result.csv",
         "docker compose up -d --wait",
         "http --download --output loosejar-1.2.0.jar https://github.com/kyrill007/loosejar/releases/download/v1.2.0/loosejar-1.2.0.jar",
-        "./mvnw verify",
+        "./mvnw clean verify",
         "java -Djarmode=tools -jar target/movie-service-0.0.1-SNAPSHOT.jar extract --destination ext",
         "java -jar -javaagent:./loosejar-1.2.0.jar -Dloosejar.outputFile=result.csv -Dloosejar.format=csv ext/movie-service-0.0.1-SNAPSHOT.jar &",
         "until nc -z localhost 8080; do sleep 1; done",
@@ -39,6 +40,18 @@
       "build-chisel": [
         "./mvnw clean verify -Poptimized",
         "docker build -f src/main/docker/Dockerfile.chisel -t movie-service:chisel ."
+      ],
+      "build-fedora": [
+        "./mvnw clean verify -Poptimized",
+        "docker build -f src/main/docker/Dockerfile.fedora -t movie-service:fedora ."
+      ],
+      "build-apko": [
+        "./mvnw clean verify -Poptimized",
+        "docker build -f src/main/docker/Dockerfile.apko -t movie-service:apko ."
+      ],
+      "build-debian": [
+        "./mvnw clean verify -Poptimized",
+        "docker build -f src/main/docker/Dockerfile.debian -t movie-service:debian ."
       ]
     }
   }

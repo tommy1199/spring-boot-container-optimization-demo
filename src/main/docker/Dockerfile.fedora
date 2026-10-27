@@ -1,0 +1,68 @@
+ARG FEDORA_RELEASE=latest
+
+FROM fedora:$FEDORA_RELEASE AS os
+SHELL ["/bin/bash", "-oeux", "pipefail", "-c"]
+
+# Build a minimal root filesystem in /staging-rootfs with dnf --installroot.
+# --use-host-config makes dnf use the repos and settings of this build image,
+# --releasever pins the installroot to the same Fedora release as the image.
+# glibc pulls in bash as a dependency (scriptlets need it).
+RUN dnf install -y \
+        --installroot=/staging-rootfs \
+        --use-host-config \
+        --releasever="$(rpm -E %fedora)" \
+        --setopt=install_weak_deps=False \
+        --nodocs \
+        glibc \
+    && dnf clean all --installroot=/staging-rootfs --use-host-config \
+    && rm -rf /staging-rootfs/var/cache/* /staging-rootfs/var/log/*
+
+# Remove bash again, but only bash: --nodeps keeps the packages that depend on it
+RUN rpm --root=/staging-rootfs -e --nodeps bash \
+    && test ! -e /staging-rootfs/usr/bin/bash
+
+FROM eclipse-temurin:25-jdk-noble  AS builder
+WORKDIR /builder
+# This points to the built jar file in the target folder
+# Adjust this to 'build/libs/*.jar' if you're using Gradle
+ARG JAR_FILE=target/*.jar
+# Copy the jar file to the working directory and rename it to application.jar
+COPY ${JAR_FILE} application.jar
+# Extract the jar file using an efficient layout
+RUN java -Djarmode=tools -jar application.jar extract --layers --destination extracted
+
+RUN jdeps --ignore-missing-deps -q  \
+    --recursive  \
+    --print-module-deps  \
+    --multi-release 25 \
+    --class-path 'extracted/dependencies/lib/*'  \
+    extracted/application/*.jar > deps.info
+RUN cat deps.info
+RUN jlink \
+    --add-modules $(cat deps.info) \
+    --strip-debug \
+    --compress zip-9 \
+    --no-header-files \
+    --no-man-pages \
+    --output /myjre
+
+# This is the runtime container
+FROM scratch
+COPY --from=os /staging-rootfs /
+
+ENV JAVA_HOME=/usr/java/jdk25
+ENV PATH=$JAVA_HOME/bin:$PATH
+COPY --from=builder /myjre $JAVA_HOME
+
+WORKDIR /application
+# Copy the extracted jar contents from the builder container into the working directory in the runtime container
+# Every copy step creates a new docker layer
+# This allows docker to only pull the changes it really needs
+COPY --from=builder /builder/extracted/dependencies/ ./
+COPY --from=builder /builder/extracted/spring-boot-loader/ ./
+COPY --from=builder /builder/extracted/snapshot-dependencies/ ./
+COPY --from=builder /builder/extracted/application/ ./
+# Start the application jar - this is not the uber jar used by the builder
+# This jar only contains application code and references to the extracted jar files
+# This layout is efficient to start up and CDS/AOT cache friendly
+ENTRYPOINT ["java", "-jar", "application.jar"]

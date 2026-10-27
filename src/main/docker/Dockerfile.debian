@@ -1,0 +1,100 @@
+# syntax=docker/dockerfile:1
+ARG DEBIAN_RELEASE=trixie
+
+FROM debian:$DEBIAN_RELEASE AS os
+ARG DEBIAN_RELEASE
+SHELL ["/bin/bash", "-oeux", "pipefail", "-c"]
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends debootstrap ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# A plain "debootstrap --variant=minbase" always installs Debian's Essential set
+# (bash, coreutils, dpkg, apt, perl-base, ...). Instead we pass debootstrap our own
+# suite script: it reuses Debian's defaults but only *extracts* a few packages
+# plus their dependencies. Nothing is configured, so no maintainer scripts run and
+# no shell is needed in the result (comparable to "chisel cut").
+COPY <<"EOF" /usr/share/debootstrap/scripts/distroless
+# shellcheck shell=sh
+mirror_style release
+download_style apt
+finddebs_style from-indices
+variants -
+keyring /usr/share/keyrings/debian-archive-keyring.gpg
+
+. "$DEBOOTSTRAP_DIR/scripts/debian-common"
+
+work_out_debs () {
+	required="base-files libc6"
+	base=""
+	# Only needed by maintainer scripts, which never run
+	EXCLUDE_DEPENDENCY="$EXCLUDE_DEPENDENCY debconf mawk awk"
+}
+
+first_stage_install () {
+	extract $required
+	# Register the extracted packages, so Syft and Grype can still inventory them
+	mkdir -p "$TARGET/var/lib/dpkg"
+	for deb in $(debfor $required); do
+		dpkg-deb --field "$TARGET/$deb" | grep -v '^Conffiles:' | sed '/^ \//d'
+		echo "Status: install ok installed"
+		echo
+	done > "$TARGET/var/lib/dpkg/status"
+}
+EOF
+
+# --foreign stops after the first stage (extracting); there is no chroot second stage
+RUN debootstrap --foreign --variant=- \
+        "$DEBIAN_RELEASE" /staging-rootfs http://deb.debian.org/debian distroless \
+    && rm -rf /staging-rootfs/debootstrap \
+              /staging-rootfs/var/cache/apt/archives/*.deb \
+              /staging-rootfs/var/lib/apt/lists/* \
+    && test ! -e /staging-rootfs/usr/bin/bash \
+    && test ! -e /staging-rootfs/usr/bin/sh \
+    && grep '^Package:' /staging-rootfs/var/lib/dpkg/status
+
+FROM eclipse-temurin:25-jdk-noble  AS builder
+WORKDIR /builder
+# This points to the built jar file in the target folder
+# Adjust this to 'build/libs/*.jar' if you're using Gradle
+ARG JAR_FILE=target/*.jar
+# Copy the jar file to the working directory and rename it to application.jar
+COPY ${JAR_FILE} application.jar
+# Extract the jar file using an efficient layout
+RUN java -Djarmode=tools -jar application.jar extract --layers --destination extracted
+
+RUN jdeps --ignore-missing-deps -q  \
+    --recursive  \
+    --print-module-deps  \
+    --multi-release 25 \
+    --class-path 'extracted/dependencies/lib/*'  \
+    extracted/application/*.jar > deps.info
+RUN cat deps.info
+RUN jlink \
+    --add-modules $(cat deps.info) \
+    --strip-debug \
+    --compress zip-9 \
+    --no-header-files \
+    --no-man-pages \
+    --output /myjre
+
+# This is the runtime container
+FROM scratch
+COPY --from=os /staging-rootfs /
+
+ENV JAVA_HOME=/usr/java/jdk25
+ENV PATH=$JAVA_HOME/bin:$PATH
+COPY --from=builder /myjre $JAVA_HOME
+
+WORKDIR /application
+# Copy the extracted jar contents from the builder container into the working directory in the runtime container
+# Every copy step creates a new docker layer
+# This allows docker to only pull the changes it really needs
+COPY --from=builder /builder/extracted/dependencies/ ./
+COPY --from=builder /builder/extracted/spring-boot-loader/ ./
+COPY --from=builder /builder/extracted/snapshot-dependencies/ ./
+COPY --from=builder /builder/extracted/application/ ./
+# Start the application jar - this is not the uber jar used by the builder
+# This jar only contains application code and references to the extracted jar files
+# This layout is efficient to start up and CDS/AOT cache friendly
+ENTRYPOINT ["java", "-jar", "application.jar"]

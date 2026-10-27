@@ -17,9 +17,7 @@ RUN mkdir /staging-rootfs \
         base-files_base \
         base-files_release-info \
         base-files_chisel \
-        ca-certificates_data \
-        libc6_libs \
-        tzdata_zoneinfo
+        libc6_libs
 RUN cp /etc/passwd /etc/group /staging-rootfs/etc \
         && install -o ubuntu -g ubuntu -d /staging-rootfs/home/ubuntu
 
@@ -52,7 +50,7 @@ RUN jlink \
 FROM scratch
 COPY --from=os /staging-rootfs /
 
-ENV JAVA_HOME=/user/java/jdk17
+ENV JAVA_HOME=/usr/java/jdk25
 ENV PATH=$JAVA_HOME/bin:$PATH
 COPY --from=builder /myjre $JAVA_HOME
 
