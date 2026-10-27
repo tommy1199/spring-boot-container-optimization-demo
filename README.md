@@ -5,7 +5,7 @@ A Spring Boot REST API for managing movies with PostgreSQL persistence and Kafka
 ## Features
 
 - **CRUD Operations**: Create, Read, Update, and Delete movies
-- **PostgreSQL Database**: JPA-based persistence
+- **PostgreSQL Database**: Spring Data JDBC-based persistence
 - **Kafka Event Streaming**: Publishes events for all movie operations
 - **Search Functionality**: Search movies by name or category
 - **Docker Compose**: Easy setup for Postgres and Kafka
@@ -296,13 +296,13 @@ Configuration can be modified in `src/main/resources/application.properties`:
 - Server port
 - Database connection settings
 - Kafka bootstrap servers
-- JPA/Hibernate settings
+- Spring Data JDBC SQL logging
 - Kafka topic names
 
 ## Technologies Used
 
 - **Spring Boot 3.2.0**
-- **Spring Data JPA**
+- **Spring Data JDBC**
 - **Spring Kafka**
 - **PostgreSQL 15**
 - **Apache Kafka 7.5.0**

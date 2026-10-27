@@ -13,12 +13,12 @@
       "analyze": [
         "rm -rf ext && rm -f loose-*.jar && rm -f result.csv",
         "docker compose up -d --wait",
-        "http --download --output loosejar-1.2.0.jar https://github.com/kyrill007/loosejar/releases/download/v1.2.0/loosejar-1.2.0.jar",
+        "http --ignore-stdin --download --output loosejar-1.2.0.jar https://github.com/kyrill007/loosejar/releases/download/v1.2.0/loosejar-1.2.0.jar",
         "./mvnw clean verify",
         "java -Djarmode=tools -jar target/movie-service-0.0.1-SNAPSHOT.jar extract --destination ext",
         "java -jar -javaagent:./loosejar-1.2.0.jar -Dloosejar.outputFile=result.csv -Dloosejar.format=csv ext/movie-service-0.0.1-SNAPSHOT.jar &",
         "until nc -z localhost 8080; do sleep 1; done",
-        "http POST :8080/api/movies name=Sinners releaseDate=2025-04-18 category=Horror",
+        "http --ignore-stdin POST :8080/api/movies name=Sinners releaseDate=2025-04-18 category=Horror",
         "PID=$(jps -l | awk '/movie-service-0.0.1-SNAPSHOT.jar/ {print $1}')",
         "kill $PID",
         "while kill -0 $PID 2>/dev/null; do sleep 1; done",
@@ -27,31 +27,31 @@
       ],
       "build": [
         "./mvnw clean verify",
-        "docker build -f src/main/docker/Dockerfile -t movie-service:latest ."
+        "docker build -f src/main/docker/Dockerfile -t movie-service:latest-jdbc ."
       ],
       "build-optimized": [
         "./mvnw clean verify -Poptimized",
-        "docker build -f src/main/docker/Dockerfile -t movie-service:optimized ."
+        "docker build -f src/main/docker/Dockerfile -t movie-service:optimized-jdbc ."
       ],
       "build-ownjre": [
         "./mvnw clean verify -Poptimized",
-        "docker build -f src/main/docker/Dockerfile.ownjre -t movie-service:ownjre ."
+        "docker build -f src/main/docker/Dockerfile.ownjre -t movie-service:ownjre-jdbc ."
       ],
       "build-chisel": [
         "./mvnw clean verify -Poptimized",
-        "docker build -f src/main/docker/Dockerfile.chisel -t movie-service:chisel ."
+        "docker build -f src/main/docker/Dockerfile.chisel -t movie-service:chisel-jdbc ."
       ],
       "build-fedora": [
         "./mvnw clean verify -Poptimized",
-        "docker build -f src/main/docker/Dockerfile.fedora -t movie-service:fedora ."
+        "docker build -f src/main/docker/Dockerfile.fedora -t movie-service:fedora-jdbc ."
       ],
       "build-apko": [
         "./mvnw clean verify -Poptimized",
-        "docker build -f src/main/docker/Dockerfile.apko -t movie-service:apko ."
+        "docker build -f src/main/docker/Dockerfile.apko -t movie-service:apko-jdbc ."
       ],
       "build-debian": [
         "./mvnw clean verify -Poptimized",
-        "docker build -f src/main/docker/Dockerfile.debian -t movie-service:debian ."
+        "docker build -f src/main/docker/Dockerfile.debian -t movie-service:debian-jdbc ."
       ]
     }
   }

@@ -1,13 +1,13 @@
 package com.example.movieservice.repository;
 
 import com.example.movieservice.model.Movie;
-import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.repository.ListCrudRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
 @Repository
-public interface MovieRepository extends JpaRepository<Movie, Long> {
+public interface MovieRepository extends ListCrudRepository<Movie, Long> {
     List<Movie> findByCategory(String category);
     List<Movie> findByNameContainingIgnoreCase(String name);
 }

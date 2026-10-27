@@ -82,7 +82,7 @@
                 </dependency>
                 <dependency>
                     <groupId>org.springframework.boot</groupId>
-                    <artifactId>spring-boot-starter-data-jpa</artifactId>
+                    <artifactId>spring-boot-starter-data-jdbc</artifactId>
                 </dependency>
                 <dependency>
                     <groupId>org.springframework.boot</groupId>
@@ -124,27 +124,7 @@
                 </dependency>
                 <dependency>
                     <groupId>org.springframework.boot</groupId>
-                    <artifactId>spring-boot-starter-data-jpa</artifactId>
-                    <exclusions>
-                        <exclusion>
-                            <groupId>org.glassfish.jaxb</groupId>
-                            <artifactId>jaxb-runtime</artifactId>
-                        </exclusion>
-                    </exclusions>
-                </dependency>
-                <!-- hibernate-core needs jakarta.xml.bind-api, but Maven resolves it through
-                     spring-boot-starter-test (shorter path), so exclusions on the JPA starter don't
-                     reach jakarta.activation-api. Declaring it directly makes this exclusion win. -->
-                <dependency>
-                    <groupId>jakarta.xml.bind</groupId>
-                    <artifactId>jakarta.xml.bind-api</artifactId>
-                    <scope>runtime</scope>
-                    <exclusions>
-                        <exclusion>
-                            <groupId>jakarta.activation</groupId>
-                            <artifactId>jakarta.activation-api</artifactId>
-                        </exclusion>
-                    </exclusions>
+                    <artifactId>spring-boot-starter-data-jdbc</artifactId>
                 </dependency>
                 <dependency>
                     <groupId>org.springframework.boot</groupId>
