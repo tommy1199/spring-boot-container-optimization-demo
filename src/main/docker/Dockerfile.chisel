@@ -50,7 +50,7 @@ RUN jlink \
 FROM scratch
 COPY --from=os /staging-rootfs /
 
-ENV JAVA_HOME=/usr/java/jdk25
+ENV JAVA_HOME=/opt/java
 ENV PATH=$JAVA_HOME/bin:$PATH
 COPY --from=builder /myjre $JAVA_HOME
 

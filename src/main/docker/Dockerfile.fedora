@@ -18,7 +18,7 @@ RUN dnf install -y \
     && rm -rf /staging-rootfs/var/cache/* /staging-rootfs/var/log/*
 
 # Remove bash again, but only bash: --nodeps keeps the packages that depend on it
-RUN rpm --root=/staging-rootfs -e --nodeps bash \
+RUN rpm --root=/staging-rootfs -e --nodeps bash ncurses-base ncurses-libs fedora-gpg-keys fedora-repos fedora-release fedora-release-common fedora-release-identity-basic gpg-pubkey\
     && test ! -e /staging-rootfs/usr/bin/bash
 
 FROM eclipse-temurin:25-jdk-noble  AS builder
@@ -50,7 +50,7 @@ RUN jlink \
 FROM scratch
 COPY --from=os /staging-rootfs /
 
-ENV JAVA_HOME=/usr/java/jdk25
+ENV JAVA_HOME=/opt/java
 ENV PATH=$JAVA_HOME/bin:$PATH
 COPY --from=builder /myjre $JAVA_HOME
 

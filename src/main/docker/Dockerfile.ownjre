@@ -24,8 +24,8 @@ RUN jlink \
     --output /myjre
 
 # This is the runtime container
-FROM ubuntu:24.04
-ENV JAVA_HOME=/user/java/jdk17
+FROM debian:trixie
+ENV JAVA_HOME=/opt/java
 ENV PATH=$JAVA_HOME/bin:$PATH
 COPY --from=builder /myjre $JAVA_HOME
 
